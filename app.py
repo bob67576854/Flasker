@@ -8,16 +8,14 @@ from webforms import LoginForm, PostForm, UserForm, PasswordForm, NamerForm, Sea
 from flask_login import UserMixin, login_user, LoginManager, login_required, logout_user, current_user
 from webforms import LoginForm, PostForm, UserForm, PasswordForm, NamerForm
 from flask_ckeditor import CKEditor
-from werkzeug.utils import secure_filename
-import uuid as uuid
-import os
+
 
 # Create a flask
 app = Flask(__name__)
 # Add CKEditor
 ckeditor = CKEditor(app)
 # Add Database
-#config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
+#app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgres://wwtczadissuyae:220d725f3e8d027612f67977971ecf97c369d79d08dc8170b71d00564a111911@ec2-44-209-186-51.compute-1.amazonaws.com:5432/df6bdfljbka7rs'
 #New MYSQL DB
 #app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:King@localhost/our_users'
