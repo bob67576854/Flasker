@@ -8,7 +8,9 @@ from webforms import LoginForm, PostForm, UserForm, PasswordForm, NamerForm, Sea
 from flask_login import UserMixin, login_user, LoginManager, login_required, logout_user, current_user
 from webforms import LoginForm, PostForm, UserForm, PasswordForm, NamerForm
 from flask_ckeditor import CKEditor
-
+from werkzeug.utils import secure_filename
+import uuid as uuid
+import os
 
 # Create a flask
 app = Flask(__name__)
@@ -16,12 +18,16 @@ app = Flask(__name__)
 ckeditor = CKEditor(app)
 # Add Database
 #app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgres://wwtczadissuyae:220d725f3e8d027612f67977971ecf97c369d79d08dc8170b71d00564a111911@ec2-44-209-186-51.compute-1.amazonaws.com:5432/df6bdfljbka7rs'
+app.config['SQLALCHEMY_DATABASE_URI'] = ' postgres://wwtczadissuyae:220d725f3e8d027612f67977971ecf97c369d79d08dc8170b71d00564a111911@ec2-44-209-186-51.compute-1.amazonaws.com:5432/df6bdfljbka7rs'
 #New MYSQL DB
 #app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:King@localhost/our_users'
 # Secret Key!
 app.config['SECRET_KEY'] = "my super secret key is that no one is supposed to know"
 # Initialize The Database
+
+UPLOAD_fOLDER = 'static/images/'
+app.config['UPLOAD_fOLDER'] = UPLOAD_fOLDER
+
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 
@@ -115,7 +121,7 @@ def dashboard():
 def delete_post(id):
 	post_to_delete = Posts.query.get_or_404(id)
 	id = current_user.id
-	if id == post_to_delete.poster.id or id == 14:	
+	if id == post_to_delete.poster.id or id == 8:	
 		try:
 			db.session.delete(post_to_delete)
 			db.session.commit()
@@ -169,7 +175,7 @@ def edit_post(id):
 		flash("Post Has Been Updated!")
 		return redirect(url_for('post', id=post.id))
 	
-	if current_user.id == post.poster_id:
+	if current_user.id == post.poster_id or current_user.id == 8:
 		form.title.data = post.title
 		#form.author.data = post.author
 		form.slug.data = post.slug
@@ -222,28 +228,33 @@ def get_current_date():
 @app.route('/delete/<int:id>')
 @login_required
 def delete(id):
-	user_to_delete = Users.query.get_or_404(id)
-	name=None
-	form=UserForm()
-	try:
-		db.session.delete(user_to_delete)
-		db.session.commit()
+	if id == current_user.id:
 
-		# Return a message
-		flash("User Was Deleted!")
+		user_to_delete = Users.query.get_or_404(id)
+		name=None
+		form=UserForm()
 		
-		our_users = Users.query.order_by(Users.name)
-		return render_template("add_user.html", 
-		form=form,
-		name=name,
-		our_users=our_users)
-	except:
-		# Return an error message
-		flash("Whoops! There was a problem deleting post, try again...")
-		our_users = Users.query.order_by(Users.name)
-		return render_template("add_user.html", 
-		form=form,name=name,our_users=our_users)
+		try:
+			db.session.delete(user_to_delete)
+			db.session.commit()
 
+			# Return a message
+			flash("User Was Deleted!")
+			
+			our_users = Users.query.order_by(Users.name)
+			return render_template("add_user.html", 
+			form=form,
+			name=name,
+			our_users=our_users)
+		except:
+			# Return an error message
+			flash("Whoops! There was a problem deleting post, try again...")
+			our_users = Users.query.order_by(Users.name)
+			return render_template("add_user.html", 
+			form=form,name=name,our_users=our_users)
+	else:
+		flash("Whoops! There was a problem deleting That Account, try again...")
+		return redirect(url_for('dashboard'))
 
 # Update Database Record
 @app.route('/update/<int:id>', methods=['GET', 'POST'])
@@ -257,8 +268,18 @@ def update(id):
 		name_to_update.favorite_color = request.form['favorite_color']
 		name_to_update.username = request.form['username']
 		name_to_update.about_author = request.form['about_author']
+		name_to_update.profile_pic = request.files['profile_pic']
+		# Grab Image Name
+		pic_filename = secure_filename(name_to_update.profile_pic.filename)
+		# Set UUID
+		pic_name = str(uuid.uuid1()) + "_" + pic_filename
+		name_to_update.profile_pic = pic_name
+		# Save That Image
+		saver = request.files['profile_pic']
+
 		try:
 			db.session.commit()
+			saver.save(os.path.join(app.config['UPLOAD_fOLDER']), pic_name)
 			flash("User Updated Successfully!")
 			return render_template("update.html", 
 				form=form,
@@ -404,7 +425,7 @@ class Users(db.Model, UserMixin):
 	email = db.Column(db.String(120), nullable=False, unique=True)
 	favorite_color = db.Column(db.String(120))
 	about_author = db.Column(db.Text(), nullable=True)
-	#profile_pic = db.Column(db.String(), nullable=True)
+	profile_pic = db.Column(db.String(120), nullable=True)
 	#date_added = db.Column(db.DateTime, default=datetime.utcnow)
 	
 	# Do some password stuff!

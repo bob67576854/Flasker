@@ -37,7 +37,7 @@ class UserForm(FlaskForm):
 	about_author = TextAreaField("About Author")
 	password_hash = PasswordField('Password', validators=[DataRequired(), EqualTo('password_hash2', message='Passwords Must Match!')])
 	password_hash2 = PasswordField('Confirm Password', validators=[DataRequired()])
-	#profile_pic = FileField("Profile Pic")
+	profile_pic = FileField("Profile Pic")
 
 # Create a Form Class
 class PasswordForm(FlaskForm):
